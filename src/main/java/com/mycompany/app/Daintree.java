@@ -1,174 +1,35 @@
 package com.mycompany.app;
 
 
-import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-
-import java.util.ArrayList;
-
-
-public class Daintree {
+class Daintree {
 
     private static final String YES = "yes";
     private static final String NO = "no";
     /**
-     * 书本类
-     */
-    class Book {
-        Book(String bookName,String author, Boolean iseBook, int bookNum) {
-            this.bookName = bookName;
-            this.iseBook = iseBook;
-            this.bookNum = bookNum;
-            this.author = author;
-        }
-
-        @Override
-        public String toString() {
-            return bookName + "("+author+"),"+bookNum+" copies," + (iseBook?" ebook available":"no ebook");
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Book) {
-                return ((Book) obj).bookName.equals(this.bookName);
-            } else {
-                return super.equals(obj);
-            }
-        }
-
-        private String bookName;
-        private String author;
-        private Boolean iseBook;
-        private int bookNum;
-
-        public String getAuthor() {
-            return author;
-        }
-
-        public void setAuthor(String author) {
-            this.author = author;
-        }
-
-        public String getBookName() {
-            return bookName;
-        }
-
-        public void setBookName(String bookName) {
-            this.bookName = bookName;
-        }
-
-        public Boolean getIseBook() {
-            return iseBook;
-        }
-
-        public void setIseBook(Boolean iseBook) {
-            this.iseBook = iseBook;
-        }
-
-        public int getBookNum() {
-            return bookNum;
-        }
-
-        public void setBookNum(int bookNum) {
-            this.bookNum = bookNum;
-        }
-    }
-
-    /**
-     * 购物车中的书本类
-     */
-    class BookGoods {
-        private Book book;
-        private Boolean isBuyEBook;
-        private int num;
-
-        public int getNum() {
-            return num;
-        }
-
-        public void setNum(int num) {
-            this.num = num;
-        }
-
-        BookGoods(Book book, Boolean isBuyEBook) {
-            this.book = book;
-            this.isBuyEBook = isBuyEBook;
-            num = 1;
-        }
-
-        public Book getBook() {
-            return book;
-        }
-
-        public void setBook(Book book) {
-            this.book = book;
-        }
-
-        public Boolean getBuyEBook() {
-            return isBuyEBook;
-        }
-
-        public void setBuyEBook(Boolean buyEBook) {
-            isBuyEBook = buyEBook;
-        }
-    }
-
-    /**
-     * 书本列表
-     */
-    private ArrayList<Book> bookList = new ArrayList<>();
-
-    /**
-     * 购物车
-     */
-    private ArrayList<BookGoods> shoppingCart = new ArrayList<>();
-
-    /**
      * 输入命令
      */
     private Scanner scanner;
+    private BookStore bookStore;
+    private ShoppingCart shoppingCart;
 
-    private int state = 0;
 
-
-    /**
-     * 初始化系统
-     */
-    public void initSystem() {
+    void initSystem() {
         scanner = new Scanner(System.in);
-        bookList.add(new Book("Absolute Java","Savitch", true, 5));
-        bookList.add(new Book("JAVA: How to Program","Deitel and Deitel", true, 0));
-        bookList.add(new Book("Computing Concepts with JAVA 8 Essentials","Horstman", false, 5));
-        bookList.add(new Book("Java Software Solutions","Lewis and Loftus",false, 5));
-        bookList.add(new Book("Java Program Design", "Cohoon and Davidson",true, 1));
+        bookStore = new BookStore();
+        shoppingCart = new ShoppingCart();
         //
+        bookStore.addBookGoods(new Book("Absolute Java", "Savitch", true, 5));
+        bookStore.addBookGoods(new Book("JAVA: How to Program", "Deitel and Deitel", true, 0));
+        bookStore.addBookGoods(new Book("Computing Concepts with JAVA 8 Essentials", "Horstman", false, 5));
+        bookStore.addBookGoods(new Book("Java Software Solutions", "Lewis and Loftus", false, 5));
+        bookStore.addBookGoods(new Book("Java Program Design", "Cohoon and Davidson", true, 1));
     }
 
-    /**
-     * 退出系统
-     */
-    public void exitSystem() {
-        scanner.close();
-        bookList.clear();
-        shoppingCart.clear();
-        System.exit(0);
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println("Welcome to Daintree!");
-        Daintree display = new Daintree();
-
-        display.initSystem();
-
-        display.menu();
-
-        display.exitSystem();
-    }
-
-    public void menu() {
+    void menu() {
         while (true) {
             printInfo();
             switch (scanner.nextInt()) {
@@ -198,64 +59,45 @@ public class Daintree {
         }
     }
 
-    /**
-     * 显示所有数量入口
-     */
     private void showAllBook() {
-        for (int i = 0; i < bookList.size(); i++) {
-            System.out.println(String.format("%d.%s",i+1,bookList.get(i).toString()));
+        for (int i = 0; i < bookStore.getAllBook().size(); i++) {
+            System.out.println(String.format("%d.%s",i+1,bookStore.getAllBook().get(i).toString()));
         }
     }
 
-    /**
-     * 付钱入口
-     */
     private void checkOut() {
-        double count = 0;
-        for (BookGoods bookGoods : shoppingCart) {
-            if (bookGoods.isBuyEBook) {
-                count += 8 * bookGoods.num;
-            } else {
-                for (Book book : bookList) {
-                    if (book.equals(bookGoods.book)) {
-                        //减去数量
-                        book.bookNum -= bookGoods.num;
-                    }
+        //结算购物车
+        ArrayList<ShoppingCart.BookGoods> bookGoods = shoppingCart.checkOut();
+        //减商店
+        for (ShoppingCart.BookGoods goods :bookGoods){
+            for (Book book : bookStore.getAllBook()) {
+                if (book.equals(goods.getBook())) {
+                    //减去数量
+                    book.setBookNum(book.getBookNum() - goods.getNum());
                 }
-                count += 30 * bookGoods.num;
             }
         }
-        //清除购物车
-        shoppingCart.clear();
-        if(count == 0){
-            System.out.println("Do not buy any books!");
-            return;
-        }
-        System.out.println(String.format("\nYou have purchased items to the total value of $%s \nThanks for shopping with Daintree!",
-                new DecimalFormat(".00").format(count)));
     }
 
-    /**
-     * 根据书籍名称移除购物车中的书入口
-     */
     private void removeBookByName() {
         System.out.println("\n");
+        ArrayList<ShoppingCart.BookGoods> allShoppingCart = shoppingCart.getAllShoppingCart();
         //显示所有书籍
-        if (shoppingCart.size() != 0) {
+        if (allShoppingCart.size() != 0) {
             System.out.println("Your Shopping Cart contains the following");
-            for (int i = 0; i < shoppingCart.size(); i++) {
-                System.out.println(String.format("%d.%s", i + 1, shoppingCart.get(i).book.bookName));
+            for (int i = 0; i < allShoppingCart.size(); i++) {
+                System.out.println(String.format("%d.%s", i + 1, allShoppingCart.get(i).getBook().getBookName()));
             }
             System.out.println("0. cancel");
             System.out.print("What do you want to remove:");
             int index = scanner.nextInt();
             if (index > 0) {
-                if (index > shoppingCart.size()) {
+                if (index > allShoppingCart.size()) {
                     //越界
                     System.out.println("out for index size.");
                 } else {
                     //TODO("确认操作")
-                    shoppingCart.remove(index - 1);
+                    shoppingCart.removeShoppingCart(allShoppingCart.get(index - 1));
                     System.out.println("Item removed from Shopping Cart");
                 }
             }
@@ -264,40 +106,20 @@ public class Daintree {
         }
     }
 
-    /**
-     * 显示购物车入口
-     */
     private void showShoppingCart() {
-        System.out.println("\n");
-        if (shoppingCart.size() != 0) {
-            System.out.println("Your Shopping Cart contains the following:");
-            for (int i = 0; i < shoppingCart.size(); i++) {
-                BookGoods book = shoppingCart.get(i);
-                if (book.isBuyEBook) {
-                    System.out.println(String.format("%d.eBook:%s,Number of %d", i + 1, book.book.bookName, book.num));
-                } else {
-                    System.out.println(String.format("%d.%s,Number of %d", i + 1, book.book.bookName, book.num));
-                }
-            }
-        } else {
-            System.out.println("Your Shopping Cart is empty!");
-        }
+        shoppingCart.show();
     }
 
-
-    /**
-     * 搜索书本入口
-     */
     private void searchBook() {
         System.out.print("\nEnter title to search for: ");
         //查找图书1
         //多写一个用于接收/n
         scanner.nextLine();
-        List<Book> books = searchForBooks(scanner.nextLine());
+        List<Book> books = bookStore.searchForBooks(scanner.nextLine());
         if (books.size() != 0) {
             System.out.println("The following title is a match: ");
             for (int i = 0; i < books.size(); i++) {
-                System.out.println(String.format("%d.%s", i + 1, books.get(i).bookName));
+                System.out.println(String.format("%d.%s -- %s", i + 1, books.get(i).getBookName(), books.get(i).getAuthor()));
             }
             System.out.println("0. cancel");
             System.out.print("What is your selection:");
@@ -309,84 +131,70 @@ public class Daintree {
                     System.out.println("out for index size.");
                 } else {
                     Book currentBook = books.get(index - 1);
-                    //有电子书
-                    if (currentBook.iseBook) {
-                        System.out.print("Do you want to buy this as an ebook:");
-                        while (true) {
-                            String command = scanner.next();
-                            if (YES.equalsIgnoreCase(command)) {
-                                addShoppingCart(currentBook, true);
-                                break;
-                            } else if (NO.equalsIgnoreCase(command)) {
-                                addShoppingCart(currentBook, false);
-                                break;
-                            } else {
-                                System.out.println("print is error!replay!");
-                                System.out.print("Do you want to buy this as an ebook:");
-                            }
+                    System.out.print("Do you want to buy this as an ebook:");
+                    while (true) {
+                        String command = scanner.next();
+                        if (YES.equalsIgnoreCase(command)) {
+                            beforeShopping(currentBook, true);
+                            break;
+                        } else if (NO.equalsIgnoreCase(command)) {
+                            beforeShopping(currentBook, false);
+                            break;
+                        } else {
+                            System.out.println("print is error!replay!");
+                            System.out.print("Do you want to buy this as an ebook:");
                         }
-                        //无电子书
-                    } else {
-                        addShoppingCart(currentBook, false);
                     }
+
                 }
             }
         } else {
             System.out.println("There is no title starting with that");
         }
-
     }
 
     /**
-     * 添加书籍进入购物车
+     * 构面前的判断
      *
-     * @param curBook : 书籍
-     * @param iseBook : 是否是电子书
+     * @param currentBook 当前书本
+     * @param iseBook  是否是电子书
      */
-    private void addShoppingCart(Book curBook, boolean iseBook) {
+    private void beforeShopping(Book currentBook, boolean iseBook) {
+        //是否有库存
+        //判断当前的书是没有电子书的，但是需要购买电子书
+        if(!currentBook.getIseBook() && iseBook){
+            System.out.println("There is no ebook available for that title.");
+            return;
+        }
+        //还有没有库存
         boolean isHave = true;
-        BookGoods bookGod = null;
-        for (BookGoods bookGoods : shoppingCart) {
-            if (bookGoods.book.equals(curBook) && bookGoods.isBuyEBook == iseBook) {
+        ShoppingCart.BookGoods bookGod = null;
+        for (ShoppingCart.BookGoods bookGoods : shoppingCart.getAllShoppingCart()) {
+            //购物车；购物车空的
+            if (bookGoods.getBook().equals(currentBook) && bookGoods.getBuyEBook() == iseBook) {
                 bookGod = bookGoods;
             }
         }
-        for (Book book : bookList) {
-            if (book.equals(curBook)) {
-                isHave = iseBook || (book.bookNum - (bookGod != null ? bookGod.num : 0)) > 0;
+        //购物车 //电子书 直接跳过检测是否有库存
+        for (Book book : bookStore.getAllBook()) {
+            if (book.equals(currentBook)) {
+                isHave = iseBook || (book.getBookNum() - (bookGod != null ? bookGod.getNum() : 0)) > 0;
             }
         }
         if (isHave) {
-            if (bookGod != null) {
-                bookGod.num++;
-            } else {
-                shoppingCart.add(new BookGoods(curBook, iseBook));
-            }
-            if (iseBook) {
-                System.out.println(String.format("“%s” eBook has been added to your Cart", curBook.bookName));
-            } else {
-                System.out.println(String.format("“%s” has been added to your Cart", curBook.bookName));
-            }
+            shoppingCart.addShoppingCart(currentBook,iseBook);
         } else {
             //无库存，无实体书了
             System.out.println("There are no physical copies of that book available!");
         }
+
     }
 
-    /**
-     * 搜索书本方法
-     *
-     * @param bookName 书名
-     * @return 书本实体类
-     */
-    private List<Book> searchForBooks(String bookName) {
-        List bookResult = new ArrayList<Book>();
-        for (Book book : bookList) {
-            if (book.bookName.toLowerCase().contains(bookName.toLowerCase())) {
-                bookResult.add(book);
-            }
-        }
-        return bookResult;
+
+    void exitSystem() {
+        scanner.close();
+        //退出进程
+        System.exit(0);
     }
 
     /**
@@ -400,5 +208,4 @@ public class Daintree {
         }
         System.out.print("Please make a selection:");
     }
-
 }

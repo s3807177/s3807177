@@ -17,4 +17,7 @@ public class AppTest
     {
         assertTrue( true );
     }
+    public void removeBookByName (){
+        assertTure(true);
+    }
 }
